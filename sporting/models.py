@@ -1,35 +1,51 @@
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+from django.urls import reverse
 from django.utils.text import slugify
 
-from django_resized import ResizedImageField
+from transliterate import translit
 
 from phonenumber_field.modelfields import PhoneNumberField
 
 
+
+
+def gen_slug(slug):
+    new_slug = translit(slug, language_code='ru', reversed=True)
+    return slugify(new_slug)
+
 # Create your models here.
 class Trainer(models.Model):
     fio = models.CharField(max_length=100)
+    slug = models.SlugField(max_length=100, unique=True, null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
     experience = models.DateField(null=True, blank=True)
     attendance = models.PositiveIntegerField(null=True, blank=True)
-    photo = ResizedImageField(size=[110, 110], upload_to=f'trainers/{slugify(fio)}', null=True, blank=True,
-                              force_format='PNG', keep_meta=False, quality=100)
+    photo = models.ImageField(upload_to=f'trainers/{slugify(fio)}', null=True, blank=True)
     rewards = models.ManyToManyField('Reward',
                                      verbose_name='Награды',
-                                     related_name='awarded', null=True, blank=True)  # many-to-many relation with Reward
-    place = models.ManyToManyField('Place',
+                                     related_name='awarded', blank=True)  # many-to-many relation with Reward
+    place = models.ForeignKey('Place', on_delete=models.SET_NULL, null=True,
                                    verbose_name='Место преподавания',
-                                   related_name='trainers', null=True, blank=True)  # many-to-many relation with Place
+                                   related_name='trainers', blank=True)  # many-to-many relation with Place
     is_published = models.BooleanField(default=True)
     sport = models.ForeignKey('Sport', on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Спорт', related_name='trainers')
 
-    def name(self):
-        first_name, last_name, fathers_name = self.fio.split()
-        return f'{first_name} {last_name[0]}.{fathers_name[0]}.'
-
     def __str__(self):
         return self.fio
+
+    def get_absolute_url(self):
+        return reverse("trainer", kwargs={"slug": self.slug})
+
+    def name(self):
+        initials = self.fio.split()
+        return f'{initials[0]} {initials[1][0]}. {initials[2][0]}'
+
+    def save(self, *args, **kwargs):
+        if not self.id:
+            self.slug = gen_slug(self.fio)
+        super().save(*args, **kwargs)
+
 
 
 class Reward(models.Model):
@@ -43,7 +59,11 @@ class Reward(models.Model):
 class Place(models.Model):
     name = models.CharField(max_length=200)
     director = models.CharField(max_length=200, null=True, blank=True)
+    locality = models.CharField(max_length=50, null=True, blank=True)
+    region = models.CharField(max_length=50, null=True, blank=True)
     address = models.CharField(max_length=300, null=True, blank=True)
+    district = models.CharField(max_length=100, null=True, blank=True)
+    _index = models.CharField(max_length=10, null=True, blank=True)
     phone_number = PhoneNumberField(max_length=20, region='RU', null=True, blank=True)
     latitude = models.FloatField(validators=[MinValueValidator(-90), MaxValueValidator(90)], default=None, null=True, blank=True)
     longitude = models.FloatField(validators=[MinValueValidator(-180), MaxValueValidator(180)], default=None, null=True, blank=True)
@@ -90,6 +110,17 @@ class SportFederation(models.Model):
     longitude = models.FloatField(validators=[MinValueValidator(-180), MaxValueValidator(180)], default=None, null=True,
                                   blank=True)
 
+
+    def __str__(self):
+        return self.name
+
+
+class SportEvent(models.Model):
+    name = models.CharField(max_length=200)
+    date = models.DateField()
+    place = models.ForeignKey('Place', on_delete=models.SET_NULL, null=True, blank=True, related_name='events')
+    section = models.ForeignKey('Section', on_delete=models.SET_NULL, null=True, blank=True, related_name='events')
+    trainer = models.ForeignKey('Trainer', on_delete=models.SET_NULL, null=True, blank=True, related_name='events')
 
     def __str__(self):
         return self.name

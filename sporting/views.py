@@ -1,5 +1,7 @@
+from typing import Any
+from django.db.models.query import QuerySet
 from django.shortcuts import render
-from django.views.generic import ListView
+from django.views.generic import ListView, DetailView
 
 from .models import Trainer, Place, Reward, SportFederation, Section, Sport
 
@@ -17,3 +19,12 @@ class Trainers(ListView):
     model = Trainer
     template_name = 'sporting/trainers.html'
     paginate_by = 12
+
+    def get_queryset(self) -> QuerySet[Any]:
+         return Trainer.objects.filter(is_published=True)
+
+
+class TrainerView(DetailView):
+    model = Trainer
+    template_name = 'sporting/trainer.html'
+    context_object_name = 'trainer'

@@ -9,8 +9,9 @@ admin.site.register(Section)
 
 @admin.register(Place)
 class PlaceAdmin(admin.ModelAdmin):
-    list_display = ('name', 'director', 'address', 'phone_number', 'latitude', 'longitude', 'attendance', 'capacity', 'locker_room', 'shower_room', 'jurisdiction')
-    list_editable = ('director', 'address', 'phone_number', 'latitude', 'longitude', 'attendance', 'capacity', 'locker_room', 'shower_room', 'jurisdiction')
+    list_display = ('name', 'director', 'address', 'region', 'locality', 'district', '_index', 'phone_number', 'latitude', 'longitude', 'attendance', 'capacity', 'locker_room', 'shower_room', 'jurisdiction')
+    list_editable = ('director', 'address', 'region', 'locality', 'district', '_index', 'phone_number', 'latitude', 'longitude', 'attendance', 'capacity', 'locker_room', 'shower_room', 'jurisdiction')
+
 
 
 @admin.register(SportFederation)

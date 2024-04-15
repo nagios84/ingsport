@@ -17,7 +17,7 @@
                             <div class="thumb">
                                 <img src="{{ trainer.photo.url }}" alt="">
                             </div>
-                            <a href="#"><h5>{{ trainer.name }}</h5></a>
+                            <a href="{{ trainer.get_absolute_url }}"><h5>{{ trainer.name }}</h5></a>
                             <p>{{ trainer.sport.name }}</p>
                         </div>
                         {% endfor %}
